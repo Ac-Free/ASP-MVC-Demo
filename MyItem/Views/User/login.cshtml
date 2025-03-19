@@ -1,0 +1,21 @@
+﻿@model MyItem.Models.Entities.User
+
+@{
+    ViewData["Title"] = "登录页面";
+}
+
+<div>
+    <form asp-controller="User" asp-action="Login" method="post">
+        <div class="mb-3">
+            <label asp-for="UserName" class="form-label">用户名</label>
+            <input asp-for="UserName" class="form-control">
+            <span asp-validation-for="UserName" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Pwd" class="form-label">密码</label>
+            <input asp-for="Pwd" type="password" class="form-control">
+            <span asp-validation-for="Pwd" class="text-danger"></span>
+        </div>
+        <button type="submit" class="btn btn-primary">登录</button>
+    </form>
+</div>

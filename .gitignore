@@ -1,0 +1,39 @@
+# Visual Studio 临时文件
+.vs/
+**/bin/
+**/obj/
+
+# 用户特定文件
+*.user
+*.userosscache
+*.suo
+*.userprefs
+
+# 构建结果
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+msbuild.log
+msbuild.err
+msbuild.wrn
+
+# Visual Studio 缓存文件
+*.[Cc]ache
+!?*.[Cc]ache/
+
+# 日志文件和数据库
+*.log
+*.sqlite
+*.sqlite3
+
+# 其他常见排除项
+[Tt]emp/
+[Tt]mp/ 

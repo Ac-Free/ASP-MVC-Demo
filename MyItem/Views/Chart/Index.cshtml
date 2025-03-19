@@ -1,0 +1,113 @@
+﻿@{
+    ViewData["Title"] = "书籍状态统计";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4">书籍状态统计</h2>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    未借出书籍 (Status = 0)
+                </div>
+                <div class="card-body">
+                    <h3 class="card-title">@ViewBag.StatusZeroCount 本</h3>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header bg-success text-white">
+                    已借出书籍 (Status = 1)
+                </div>
+                <div class="card-body">
+                    <h3 class="card-title">@ViewBag.StatusOneCount 本</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    图表展示
+                </div>
+                <div class="card-body d-flex justify-content-center">
+                    <div id="bookStatusChart" style="width: 400px; height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Char/westeros.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化ECharts实例
+            const chartDom = document.getElementById('bookStatusChart');
+            // 使用westeros主题，如果不需要可以移除第二个参数
+            const myChart = echarts.init(chartDom, 'westeros');
+            
+            // 准备数据
+            const chartData = [
+                { name: '未借出书籍', value: @ViewBag.StatusZeroCount },
+                { name: '已借出书籍', value: @ViewBag.StatusOneCount }
+            ];
+            
+            // 配置项
+            const option = {
+                title: {
+                    text: '书籍借阅状态分布',
+                    left: 'center'
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b}: {c} ({d}%)'
+                },
+                legend: {
+                    orient: 'horizontal',
+                    top: 'bottom',
+                    data: chartData.map(item => item.name)
+                },
+                series: [
+                    {
+                        name: '借阅状态',
+                        type: 'pie',
+                        radius: ['40%', '70%'], // 环形图效果，移除此行或设为 '70%' 为普通饼图
+                        avoidLabelOverlap: true,
+                        itemStyle: {
+                            borderRadius: 10,
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        },
+                        label: {
+                            show: true,
+                            formatter: '{b}: {c} 本 ({d}%)'
+                        },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: '16',
+                                fontWeight: 'bold'
+                            }
+                        },
+                        data: chartData
+                    }
+                ]
+            };
+            
+            // 使用配置项设置图表
+            myChart.setOption(option);
+            
+            // 响应窗口大小变化
+            window.addEventListener('resize', function() {
+                myChart.resize();
+            });
+        });
+    </script>
+}

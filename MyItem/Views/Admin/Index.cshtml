@@ -1,0 +1,268 @@
+﻿@model MyItem.Models.ViewModels.PaginatedList<MyItem.Models.Entities.Book>
+
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    ViewData["Title"] = "Admin";
+
+    // session获取用户数据
+    var userId = HttpContextAccessor.HttpContext.Session.GetInt32("UserId");
+    var userName = HttpContextAccessor.HttpContext.Session.GetString("UserName");
+}
+
+@if(userName != "admin")
+{
+    <h2>你没有权限访问该页面</h2>
+}
+else
+{
+    <div class="container mt-4">
+        @if (userId.HasValue)
+        {
+            <h1 class="display-4 mb-4">书籍列表</h1>
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            <!-- 添加新增图书按钮 -->
+            <div class="mb-3">
+                <button type="button" class="btn btn-success" onclick="openAddModal()">新增图书</button>
+            </div>
+
+            <div class="row">
+                @if (Model != null && Model.Items.Any())
+                {
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Id</th>
+                                <th scope="col">书名</th>
+                                <th scope="col">状态</th>
+                                <th scope="col">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var book in Model.Items)
+                            {
+                                <tr>
+                                    <td>@book.Id</td>
+                                    <td>@book.BookName</td>
+                                    @if (book.Status == 0)
+                                    {
+                                        <td>可借阅</td>
+                                    }
+                                    else
+                                    {
+                                        <td>已被 @book.User.UserName 借阅</td>
+                                    }
+                                    <td>
+                                        <button type="button" class="btn btn-primary" onclick="openEditModal(@book.Id, '@book.BookName')">修改</button>
+                                        @if (book.Status == 0)
+                                        {
+                                            <button type="button" class="btn btn-danger" onclick="openDeleteModal(@book.Id, '@book.BookName')">删除</button>
+                                        }
+                                        else
+                                        {
+                                            <button type="button" class="btn btn-danger" disabled>删除</button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+
+                    <!-- 分页控件 -->
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div>
+                            显示 @Model.Items.Count 条，共 @Model.TotalItems 条记录
+                        </div>
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination">
+                                @if (Model.HasPreviousPage)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = Model.PageIndex - 1 })" aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                }
+                                else
+                                {
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#" aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                }
+
+                                @for (int i = Math.Max(1, Model.PageIndex - 2); i <= Math.Min(Model.TotalPages, Model.PageIndex + 2); i++)
+                                {
+                                    <li class="page-item @(i == Model.PageIndex ? "active" : "")">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+                                    </li>
+                                }
+
+                                @if (Model.HasNextPage)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = Model.PageIndex + 1 })" aria-label="Next">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                }
+                                else
+                                {
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#" aria-label="Next">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </nav>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">
+                        暂无图书记录。
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-warning mt-4">
+                <h4>未登录</h4>
+                <p>正在跳转到登录页面...</p>
+            </div>
+
+            <script>
+                // 1秒后自动跳转到登录页面
+                setTimeout(() => {
+                    window.location.href = '@Url.Action("Login", "User")';
+                }, 1000);
+            </script>
+        }
+    </div>
+
+    <!-- 编辑图书的模态框 -->
+    <div class="modal fade" id="editBookModal" tabindex="-1" aria-labelledby="editBookModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editBookModalLabel">修改图书信息</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editBookForm" method="post" action="@Url.Action("UpdateBook", "Admin")">
+                        <input type="hidden" id="bookId" name="Id" value="" />
+                        <div class="mb-3">
+                            <label for="bookName" class="form-label">书名</label>
+                            <input type="text" class="form-control" id="bookName" name="BookName" required>
+                        </div>
+                        <!-- 可以根据需要添加更多字段，如作者、出版社等 -->
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="submit" class="btn btn-primary">保存</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增图书的模态框 -->
+    <div class="modal fade" id="addBookModal" tabindex="-1" aria-labelledby="addBookModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addBookModalLabel">新增图书</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addBookForm" method="post" action="@Url.Action("AddBook", "Admin")">
+                        <div class="mb-3">
+                            <label for="newBookName" class="form-label">书名</label>
+                            <input type="text" class="form-control" id="newBookName" name="BookName" required>
+                        </div>
+                        <!-- 可以根据需要添加更多字段，如作者、出版社等 -->
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="submit" class="btn btn-success">添加</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加删除确认模态框 -->
+    <div class="modal fade" id="deleteBookModal" tabindex="-1" aria-labelledby="deleteBookModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteBookModalLabel">确认删除</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>确定要删除《<span id="deleteBookName"></span>》吗？此操作不可恢复。</p>
+                    <form id="deleteBookForm" method="post" action="@Url.Action("DeleteBook", "Admin")">
+                        <input type="hidden" id="deleteBookId" name="Id" value="" />
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="submit" class="btn btn-danger">确认删除</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function openEditModal(bookId, bookName) {
+            // 填充表单数据
+            document.getElementById('bookId').value = bookId;
+            document.getElementById('bookName').value = bookName;
+            
+            // 显示模态框
+            var editModal = new bootstrap.Modal(document.getElementById('editBookModal'));
+            editModal.show();
+        }
+
+        function openAddModal() {
+            // 清空表单数据（以防之前有残留数据）
+            document.getElementById('newBookName').value = '';
+            
+            // 显示模态框
+            var addModal = new bootstrap.Modal(document.getElementById('addBookModal'));
+            addModal.show();
+        }
+
+        function openDeleteModal(bookId, bookName) {
+            // 填充表单数据
+            document.getElementById('deleteBookId').value = bookId;
+            document.getElementById('deleteBookName').textContent = bookName;
+            
+            // 显示模态框
+            var deleteModal = new bootstrap.Modal(document.getElementById('deleteBookModal'));
+            deleteModal.show();
+        }
+    </script>
+}
