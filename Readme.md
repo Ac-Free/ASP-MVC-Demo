@@ -36,7 +36,7 @@ ASP.NET MVC + EF + SqlServer
 
 ![](./img/首页.png)
 
-###### 书籍管理页面
+###### 书籍管理页面（管理员访问）
 
 ![](./img/书籍管理页面.png)
 
@@ -44,6 +44,6 @@ ASP.NET MVC + EF + SqlServer
 
 ![](./img/新增图书.png)
 
-###### 图表页
+###### 图表页（ECharts）
 
 ![](./img/图表页.png)
